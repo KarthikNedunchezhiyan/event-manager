@@ -135,10 +135,18 @@ impl<S: MutEventSubscriber> EventManager<S> {
         #[cfg(feature = "remote_endpoint")]
         let mut endpoint_event = None;
 
+        self.epoll_context.is_dispatch_phase = true;
+
         // Use the temporary, pre-allocated buffer to check ready events.
         for ev_index in 0..event_count {
             let event = self.ready_events[ev_index];
             let fd = event.fd();
+
+            // If the fd is in recently added fds list then this event is not caused by this
+            // fd. Ignoring this event.
+            if self.epoll_context.recently_added_fds.contains(&fd) {
+                continue;
+            }
 
             if let Some(subscriber_id) = self.epoll_context.subscriber_id(fd) {
                 self.subscribers.get_mut_unchecked(subscriber_id).process(
@@ -167,6 +175,9 @@ impl<S: MutEventSubscriber> EventManager<S> {
 
         #[cfg(feature = "remote_endpoint")]
         self.dispatch_endpoint_event(endpoint_event);
+
+        self.epoll_context.is_dispatch_phase = false;
+        self.epoll_context.recently_added_fds.clear();
     }
 }
 

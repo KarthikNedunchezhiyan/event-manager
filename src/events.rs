@@ -244,6 +244,10 @@ impl<'a> EventOps<'a> {
             .or_insert_with(Vec::new)
             .push(fd);
 
+        if self.epoll_wrapper.is_dispatch_phase {
+            self.epoll_wrapper.recently_added_fds.push(fd);
+        }
+
         Ok(())
     }
 

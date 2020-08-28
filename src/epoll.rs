@@ -18,6 +18,10 @@ pub(crate) struct EpollWrapper {
     // Records the set of fds that are associated with the subscriber that has the given id.
     // This is used to keep track of all fds associated with a subscriber.
     pub(crate) subscriber_watch_list: HashMap<SubscriberId, Vec<RawFd>>,
+    // Used to keep track of newly added fds after the poll
+    pub(crate) recently_added_fds: Vec<RawFd>,
+    // Used to find whether dispatch is in progress
+    pub(crate) is_dispatch_phase: bool,
 }
 
 impl EpollWrapper {
@@ -26,6 +30,8 @@ impl EpollWrapper {
             epoll: Epoll::new().map_err(|e| Error::Epoll(Errno::from(e)))?,
             fd_dispatch: HashMap::new(),
             subscriber_watch_list: HashMap::new(),
+            recently_added_fds: Vec::new(),
+            is_dispatch_phase: false,
         })
     }
 
